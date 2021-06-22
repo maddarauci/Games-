@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html"; charset="utf-8">
+		<title>HTML-5 FILE</title>
+		<script>
+			// once the page loads completely this function will be called.
+			function pageLoad() {
+				// get a handle to the canvas object.
+				var canvas = document.getElementById("testCanvas");
+				// get the context object
+				var context = canvas.getContext("2d");
+
+				// drawing on the canvas.
+				// drawing rectangles
+				//fillRect(x, y, width, height): draws a filled rect
+				//stroke(x, y, width, height): draws the rects outline
+				//clearRect(x, y, width, height): clears the specified rectangular area and makes it transparent.
+				context.fillRect(50, 70, 90, 30);
+
+
+
+				alert("Hello World!");
+			}
+		</script>
+	</head>
+	<body onload="pageLoad();">
+		<canvas width="640" height="480" id="testCanvas" style="border: 1px solid black;">ok!</canvas>
+	</body>
+</html>
