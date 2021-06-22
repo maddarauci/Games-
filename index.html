@@ -16,8 +16,68 @@
 				//fillRect(x, y, width, height): draws a filled rect
 				//stroke(x, y, width, height): draws the rects outline
 				//clearRect(x, y, width, height): clears the specified rectangular area and makes it transparent.
+
+				// solid square 
+				context.fillRect(200, 10, 100, 100);
+				// another solid square
 				context.fillRect(50, 70, 90, 30);
 
+				// stroked rectangles
+				// rectangular outline
+				context.strokeRect(110, 10, 50, 50);
+				// another one 
+				context.strokeRect(30, 10, 50, 50);
+
+				// clearing rectangles
+				context.clearRect(210, 20, 30, 20);
+				// another one
+				context.clearRect(260, 20, 30, 20);
+
+				// drawing complex paths
+				/*the context has several methods that allows us to draw complex shapes when simple boxes aren't enough 
+				-beginPath(): starts recording a new shape
+				closePath(): closes the path by drawing a line from the current drawing point of the starting-point
+				fill(), stroke(): fills or draws an outline of the recorded shape
+				moveTo(x, y): draws a line from the current drawingPoint to x, y
+				arc(x, y, radius, startAngle, endAngle, antiClockWise): draws an arc at x,y with specified radius.
+				*/
+
+				// a filled triangle
+				context.beginPath();
+				context.moveTo(140, 160); // starting point
+				context.lineTo(140, 220);
+				context.lineTo(40, 190);
+				context.closePath();
+				context.stroke();
+
+				// more complex set of lines 
+				context.beginPath(160, 160);
+				context.lineTo(170, 220);
+				context.lineTo(240, 210);
+				context.lineTo(260, 170);
+				context.lineTo(190, 140);
+				context.closePath();
+				context.stroke();
+
+				// drawing arcs & circles
+				// semicircle
+				//PI radians = 180 degrees
+				context.arc(100, 300, 40, 0, Math.PI, true);
+				context.stroke();
+
+				// Draw a full circle
+				context.beginPath();
+				// Draw an arc at (500, 50) with radius 30 from 0 to 360 degrees, anticlockwise
+				// 2*PI radians = 360 degrees
+				context.arc(100, 300, 30, 0, 2 * Math.PI, true);
+				context.fill()
+
+				// Draw a three-quarter arc
+				context.beginPath();
+				// Draw an arc at (400, 100) with radius 25 from 0 to 270 degrees, clockwise
+				// (3/2*PI radians = 270 degrees)
+				context.arc(200, 300, 25, 0, 3 / 2 * Math.PI, false);
+				context.stroke();
 
 
 				alert("Hello World!");

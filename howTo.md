@@ -1,7 +1,7 @@
 <h2>
 building blocks for building games
 </h2>
-
+<h3>upto page 23</h3>h3>
 --some of the basic building blocks that are used through-out the entire project:
 - the canvaas element, to render shapes and images.
 - the audio element, to add sounds and the background music.
