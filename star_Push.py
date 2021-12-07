@@ -231,7 +231,165 @@ def runLevel(levels, levelNum):
 				keyPressed = False
 
 		DISPALYSURF.fill(BGCOLOR)
-		
+
+		if mapNeedsRedraw:
+			mapSurf = drawMap(mapObj, gameStatObj, levelObj['goals'])
+			mapNeedsRedraw =  False
+		if cameraUp and cameraOffsety < MAX_CAM_X_PAN:
+			cameraOffsety += CAM_MOVE_SPEED
+		elif cameraDown and cameraOffsety > -MAX_CAM_X_PAN:
+			cameraOffsety -= CAM_MOVE_SPEED
+		if cameraLeft and cameraOffsetX < MAX_CAM_Y_PAN:
+			cameraOffsetX += CAM_MOVE_SPEED
+		elif cameraRight and cameraOffsetX > -MAX_CAM_Y_PAN:
+			cameraOffsetX -= CAM_MOVE_SPEED
+
+		# adjust mapSurf;s Rect object based on the camera offset.
+		mapSurfRect = mapSurf.get_rect()
+		mapSurfRect.center = (HALF_W + cameraOffsetX, HALF_H + cameraOffsety)
+
+		# draw  mapSurf to the to DISPLAYSURF Surface objects.
+		DISPLAYSURF.blit(mapSurf, mapSurfRect)
+
+		DISPLAYSURF.blit(levelSurf, levelRect)
+		stepSurf = BASCIFONT.render("Steps: %s" % (gameStatObj['stepCounter']), 1, TEXTCOLOR)
+		stepRect = stepSurf.get_rect()
+		stepRect.bottomleft = (20, WIN_HEIGHT - 10)
+		DISPLAYSURF.blit(stepSurf, stepRect)
+
+		if levelIsComplete:
+			# is solved, show the "solved!" image until the player has pressed a key.
+			solvedRect = IMAGEDICT['solved'].get_rect()
+			solvedRect.center(IMAGEDICT['solved'], solvedRect)
+
+			if keyPressed:
+				return 'solved'
+
+		pygame.display.update() # draw DISPLAYSURF to the screen.
+		FPSCLOCK.tick()
+
+def decorateMap(mapObj, startxy):
+	'''
+	Makes a copy of the given map object and modifies it.
+	here is what is don to it:
+	    * walls that are corners are turned into corner pieces.
+	    * the outside/inside floor tile distinction is made.
+	    * tree/rock decorations are randomly added to the outside tiles.
+
+	returns the deocrated map object.
+	'''
+	startx, starty = startxy # Syntactic sugar
+
+	# copy the map object so we dont modify the original passed.
+	mapObjCopy = copy.deepcopy(mapObj)
+
+	# remove the non-wall characters from the map data.
+	for x in range(len(mapObjCopy)):
+		for y in range(len(mapObjCopy[0])):
+			if mapObjCopy[x][y] in ('$', '.', '@', '+', '*'):
+				mapObjCopy[x][y] = ' '
+
+	# flood fill to determine inside/outside floor tiles.
+	floorFill(mapObjCopy, startx, starty, ' ', 'o')
+
+	# convert the adjoined walls into corner tiles.
+	for x in range(len(mapObjCopy)):
+		for y in range(len(mapObjCopy[0])):
+
+			if mapObjCopy[x][y] == "#":
+				if (isWall(mapObjCopy, x, y-1) and isWall(mapObjCopy, x+1, y)) or \
+				(isWall(mapObjCopy, x+1, y) and isWall(mapObjCopy, x, y+1)) or \
+				(isWall(mapObjCopy, x, y+1) and isWall(mapObjCopy, x-1, y)) or \
+				(isWall(mapObjCopy, x-1, y) and isWall(mapObjCopy, x, y-1)):
+					mapObjCopy[x][y] = 'x'
+			elif mapObjCopy[x][y] == ' ' and random.randint(0, 99) < OUTSIDE_DECORATION_PCT:
+				mapObjCopy[x][y] = random.choice(list(OUTSIDE_DECOMAPPING.keys()))
+
+	return mapObjCopy
+
+def isBlocked(mapObj, gameStatObj, x, y):
+	'''
+		Return true if the (x, y) position on the map is 
+		block by a wall or star, otherwise return False.
+	'''
+	if isWall(mapObj, x, y):
+		return True
+	elif x < 0 or x >= len(mapObj) or y < 0 or y >= len(mapObj[x]):
+		return True # x and y aren't actually on the map.
+	elif (x, y) in gameStatObj['start']:
+		return True # a star is blocking 
+
+	return False
+
+def makeMove(mapObj, gameStatObj, playerMoveTo):
+	'''
+	given a map and game state object, see if it is possible for the player to make the given move.
+	if it is, then change the player's position (and the position of any pushed star). if not, do nothing.
+
+	return True if the player moved, otherwise False.
+	'''
+
+	# can the player move in any direction ?
+	playerx, playery = gameStatObj['player']
+
+	# this variable is "syntactic sugar". typing "stars" is more readable than typing "gameStatObj"['stars'] in ur code.
+	stars = gameStatObj['stars']
+
+	if playerMoveTo == UP:
+		xOffset = 0
+		yOffset = -1 
+	elif playerMoveTo == RIGHT:
+		xOffset = 1
+		yOffset = 0
+	elif playerMoveTo == DOWN:
+		xOffset = 0
+		yOffset = 1
+	elif playerMoveTo == LEFT:
+		xOffset = -1
+		yOffset = 0
+def readLevelsFile(filename):
+        assert os.path.exists(filename), 'connot fund the levels file: %s ' % (filename)
+        mapFile = open(filename, 'r')
+        # each level must end with a blank line
+        content = mapFile.readlines() + ['\r\n']
+        mapFile.close()
+
+        levels = [] # Will contain a list of level object.
+        levelNum = 0
+        mapTextLines = [] # contains the lines for a single levels map
+        mapObj = [] # the map object made from the data in mapTextLines
+        for lineNum in range(len(content)):
+                # process each line that was in the level file.
+                line = content[lineNum].restrip('r\n')
+
+                if ';' in line:
+                        # ignore the ; lines, they are the comment in the levels file.
+                        line = line[:line.find(';')]
+                if line != '':
+                        # this line is part of the map
+                        mapTextLines.append(line)
+                elif line == '' and len(mapTextLines) > 0:
+                        # a blank line indicates the end of the levels map in the file.
+                        # convert the text in mapTextLines into a level object
+                        # find the longest row in the map
+                        maxWidth = -1
+                        for i in range(len(mapTextLines)):
+                                if len(mapTextLines[i]) > maxWidth:
+                                        maxWidth = len(mapTextLines[i])
+                        # add spaces to the end of the shorter rows this
+                        # ensures the map will be rectangluar
+                        for i in range(len(mapTextLines[0])):
+                                mapObj.append([])
+                        for y in range(maxWidth):
+                                mapObj[x].append(mapTextLines[y][x])
+
+                        # loop through the spaces in the map and find the @, ., and $
+                        # characters for the starting game state.
+                        startx = None # the x and y for the player's starting position
+                        starty = None
+                        goals = []
+                        stars = []
 
 
-print("star Pusher done: pg~266")
+
+print("star Pusher done: pg~269")
